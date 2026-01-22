@@ -1,0 +1,78 @@
+local players = game:GetService("Players")
+local localplayer = players.LocalPlayer
+
+local function givehat(id, mesh)
+	game.ReplicatedStorage["01_server"]:FireServer("cmd", "-gh " .. tostring(id))
+	task.wait(6)
+	for _,v in pairs(localplayer.Character:GetDescendants()) do
+		if v:IsA("SpecialMesh") and v.MeshId == mesh then
+			v.Parent:BreakJoints()
+		end
+	end
+end
+
+local tablechat = {
+	{chat="SIUU",asset="90656138499027",meshid="rbxassetid://116425672473518"},
+	{chat="hello there",asset="103201962688310",meshid="rbxassetid://81716485258207"},
+	{chat="i can't chat",asset="136347293353871",meshid="rbxassetid://93290306726537"},
+	{chat="chat, am i cooked!",asset="106543432691406",meshid="rbxassetid://72179729500884"},
+	{chat="didnt ask.",asset="102119692685451",meshid="rbxassetid://107900048460244"},
+	{chat="...",asset="88888813197986",meshid="rbxassetid://79260237415542"},
+	{chat="wanna be friend?",asset="14265290708",meshid="rbxassetid://14255137420"},
+	{chat="real or fake",asset="18234382021",meshid="rbxassetid://18234298515"},
+	{chat="skill issue",asset="89226911093170",meshid="rbxassetid://72447999423852"},
+	{chat="uhhhhh",asset="73661832085631",meshid="rbxassetid://88556760886554"},
+	{chat="you're",asset="14449994683",meshid="rbxassetid://14449957946"},
+	{chat=":)",asset="138780688204181",meshid="rbxassetid://122170090580897"},
+	{chat="fr",asset="87030772922672",meshid="rbxassetid://82949650967686"},
+	{chat="anyways",asset="13945579117",meshid="rbxassetid://13836128657"},
+	{chat="sup",asset="12710879636",meshid="rbxassetid://12710736057"},
+	{chat="me. no. verify.",asset="133509098574967",meshid="rbxassetid://131421181364177"},
+	{chat="ok",asset="15619979854",meshid="rbxassetid://15619843436"},
+	{chat="you're cooked",asset="117732476425397",meshid="rbxassetid://73838930179633"},
+	{chat="hell yea",asset="136565533173134",meshid="rbxassetid://71788681147563"},
+	{chat="bye",asset="17418922112",meshid="rbxassetid://17418752052"},
+	{chat="i don't care",asset="82009064464535",meshid="rbxassetid://72421595169696"},
+	{chat="yes!",asset="99950671940667",meshid="rbxassetid://97550006185379"},
+	{chat="nah",asset="17227149761",meshid="rbxassetid://17226581374"},
+	{chat="no.",asset="17175456884",meshid="rbxassetid://17175444659"},
+	{chat="i'm boutta crash out",asset="126309436211489",meshid="rbxassetid://131147795029438"}
+}
+
+local gui = Instance.new("ScreenGui", localplayer.PlayerGui)
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.fromOffset(220, 300)
+frame.Position = UDim2.fromScale(0.05, 0.2)
+frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Active = true
+frame.Draggable = true
+
+local scroll = Instance.new("ScrollingFrame", frame)
+scroll.Size = UDim2.new(1, -10, 1, -10)
+scroll.Position = UDim2.fromOffset(5,5)
+scroll.CanvasSize = UDim2.new(0,0,0,0)
+scroll.ScrollBarImageTransparency = 0.2
+scroll.BorderSizePixel = 0
+scroll.BackgroundTransparency = 1
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.None
+
+local layout = Instance.new("UIListLayout", scroll)
+layout.Padding = UDim.new(0,6)
+
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	scroll.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 6)
+end)
+
+for _,v in ipairs(tablechat) do
+	local b = Instance.new("TextButton", scroll)
+	b.Size = UDim2.new(1, -6, 0, 30)
+	b.Text = v.chat
+	b.BackgroundColor3 = Color3.fromRGB(50,50,50)
+	b.TextColor3 = Color3.new(1,1,1)
+	b.BorderSizePixel = 0
+	b.MouseButton1Click:Connect(function()
+		givehat(v.asset, v.meshid)
+	end)
+end
