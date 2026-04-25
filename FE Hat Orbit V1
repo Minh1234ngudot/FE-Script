@@ -1,0 +1,461 @@
+local plr = game.Players.LocalPlayer;
+local chatService = game:GetService("TextChatService");
+local generalChannel = chatService.TextChannels.RBXGeneral;
+local UserInputService = game:GetService("UserInputService");
+local RunService = game:GetService("RunService");
+
+local mov = {}; 
+local mov2 = {}; 
+
+-- ** PATTERN VARIABLES **
+local rotx = 0;
+local rotz = math.pi / 2;
+local height = 0;
+local heighti = 1;
+local offset = 30;              
+local speed = 50;               
+local mode = 1;                 
+local angular = Vector3.new(0, 80, 0); 
+local l = 1;
+local waveFactor = 0;           
+
+local function getNumAccessories()
+    return math.max(1, #mov);
+end
+
+-- ** 1. INPUT PARSER FUNCTION (KEYBOARD) **
+local function handleInput(input, gameProcessedEvent)
+    if gameProcessedEvent then return end
+
+    local key = input.KeyCode;
+    local new_mode = nil;
+
+    -- KEYS 1-0 (Modes 1-10: Geometric & Knots)
+    if key == Enum.KeyCode.One then new_mode = 1;    -- Superellipse Orbit
+    elseif key == Enum.KeyCode.Two then new_mode = 2;  -- Hypocycloid / Spirograph
+    elseif key == Enum.KeyCode.Three then new_mode = 3;  -- Torus Knot (p=5, q=3)
+    elseif key == Enum.KeyCode.Four then new_mode = 4;   -- Dynamic Tetrahedron 
+    elseif key == Enum.KeyCode.Five then new_mode = 5;   -- Attractor Warp Field 
+    elseif key == Enum.KeyCode.Six then new_mode = 6;   -- Epitrochoid Curve (New)
+    elseif key == Enum.KeyCode.Seven then new_mode = 7; -- Rose Curve (New)
+    elseif key == Enum.KeyCode.Eight then new_mode = 8;  -- Lissajous Knot (7, 5, 6)
+    elseif key == Enum.KeyCode.Nine then new_mode = 9;  -- Fibonacci Spiral
+    elseif key == Enum.KeyCode.Zero then new_mode = 10; -- Hypersphere Projector
+
+    -- KEYS F1-F12 (Modes 11-22: Dynamic & Volumetric)
+    elseif key == Enum.KeyCode.F1 then new_mode = 11; -- Double Helix Orbit (New)
+    elseif key == Enum.KeyCode.F2 then new_mode = 12; -- Volumetric Orbit
+    elseif key == Enum.KeyCode.F3 then new_mode = 13; -- Vortex Turbine
+    elseif key == Enum.KeyCode.F4 then new_mode = 14; -- Concentric Rings (Stacked)
+    elseif key == Enum.KeyCode.F5 then new_mode = 15; -- Breathing Cone 
+    elseif key == Enum.KeyCode.F6 then new_mode = 16; -- Ribbon Wave
+    elseif key == Enum.KeyCode.F7 then new_mode = 17; -- Stacked Pulsing Rings
+    elseif key == Enum.KeyCode.F8 then new_mode = 18; -- Spherical Shell (Moire Effect)
+    elseif key == Enum.KeyCode.F9 then new_mode = 19; -- Hyperbolic Warp Pulse
+    elseif key == Enum.KeyCode.F10 then new_mode = 20; -- Wavefront Emitter
+    elseif key == Enum.KeyCode.F11 then new_mode = 21; -- Chaos Cube (New high-impact mode)
+    elseif key == Enum.KeyCode.F12 then new_mode = 22; -- Galactic Swarm (New high-impact mode)
+    end
+
+    if new_mode then
+        mode = new_mode;
+    end
+end
+
+UserInputService.InputBegan:Connect(handleInput);
+
+
+-- Function containing everything that must run ONCE at the start of the script.
+local function initial_setup()
+    -- ** TELEPORT CHECK (UNCHANGED) **
+    
+    local new_id = "2649326901"
+    local command = "-gh " .. table.concat(table.create(12, new_id), ", ")
+
+    -- ** INITIAL CHAT COMMAND (7 times) **
+    generalChannel:SendAsync(command)
+    generalChannel:SendAsync(command)
+    generalChannel:SendAsync(command)
+    generalChannel:SendAsync(command)
+    generalChannel:SendAsync(command)
+    generalChannel:SendAsync(command)
+    generalChannel:SendAsync(command)
+    wait(2)
+    generalChannel:SendAsync("-net")
+end
+
+-- Function that handles character-specific setup and the movement loop (runs on CharacterAdded)
+local function runAccessoryControl()
+    local chr = plr.Character or plr.CharacterAdded:Wait();
+    local hum = chr:WaitForChild("Humanoid");
+    mov = {};
+    mov2 = {};
+    local head = chr:WaitForChild("Head");
+
+    -- ** ACCESSORY INITIALIZATION START (UNCHANGED) **
+    wait(0.5)
+    local accessories = chr:GetChildren()
+
+    for _, v in pairs(accessories) do
+        if v:IsA("Accessory") then
+            local b = v.Handle;
+
+            if b and b:IsA("Part") then
+                b.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0);
+                b.CanCollide = false;
+                b:BreakJoints();
+
+                for _, k in pairs(v:GetChildren()) do
+                    if not k:IsA'SpecialMesh' and not k:IsA'Part' then
+                        k:Destroy();
+                    end
+                end
+
+                local still = Instance.new('BodyAngularVelocity', b);
+                still.MaxTorque = Vector3.new(math.huge, math.huge, math.huge);
+                still.AngularVelocity = Vector3.new(0, 0, 0);
+
+                local align = Instance.new('AlignPosition', b);
+                align.MaxForce = math.huge;
+                align.MaxVelocity = math.huge;
+                align.RigidityEnabled = false;
+                align.ApplyAtCenterOfMass = true;
+                align.Responsiveness = 200;
+
+                local a0 = Instance.new('Attachment', b);
+                local a1 = Instance.new('Attachment', head);
+                align.Attachment0 = a0;
+                align.Attachment1 = a1;
+
+                table.insert(mov, a1);
+                table.insert(mov2, still);
+            end
+        end
+    end
+    -- ** ACCESSORY INITIALIZATION END **
+    
+    -- ** MOVEMENT LOOP (Pattern Selector) **
+    local connection = RunService.RenderStepped:Connect(function()
+
+        -- Orbit variables update
+        rotx = rotx + speed / 100;
+        rotz = rotz + speed / 100;
+        l = (l >= 360 and 1 or l + speed);
+        waveFactor = waveFactor + 0.15 * (speed / 25); 
+
+        if heighti == 1 then height = height + speed / 1000; elseif heighti == 2 then height = height - speed / 1000; end
+        if height > 2 then heighti = 2; end
+        if height < -1 then heighti = 1; end
+
+        local current_offset = offset;
+        local char_pos = chr.HumanoidRootPart.Position;
+        local numAcc = getNumAccessories();
+
+        for i, v in pairs(mov) do
+            local targetPosition;
+            local index_ratio = (i - 1) / numAcc; 
+            local phase_offset = index_ratio * math.pi * 2; 
+            local index_scaled = (i - 1) - (numAcc / 2); 
+
+            -- ** MODE 1 (KEY 1): Superellipse Orbit (Sharp Diamond/Square Shape) **
+            if mode == 1 then
+                local n = 8.0; 
+                local t = rotx * 0.8 + phase_offset;
+                local r = current_offset * 1.5; 
+
+                local x = r * math.sign(math.cos(t)) * math.abs(math.cos(t))^(2/n);
+                local z = r * math.sign(math.sin(t)) * math.abs(math.sin(t))^(2/n);
+                local y = math.sin(rotx * 2.5) * 8; 
+                targetPosition = char_pos + Vector3.new(x, y, z);
+
+            -- ** MODE 2 (KEY 2): Hypocycloid / Spirograph (Multi-petal, high speed) **
+            elseif mode == 2 then
+                local R = current_offset * 1.8; 
+                local r = current_offset * 0.4; 
+                local d = current_offset * 1.5;     
+                local t = rotx * 1.0 + phase_offset * 10; 
+
+                local x = (R - r) * math.cos(t) + d * math.cos(((R - r) / r) * t);
+                local z = (R - r) * math.sin(t) - d * math.sin(((R - r) / r) * t);
+                local y = math.sin(t * 6) * 15; 
+                targetPosition = char_pos + Vector3.new(x, y, z);
+
+            -- ** MODE 3 (KEY 3): Torus Knot (p=5, q=3, Complex 3D) **
+            elseif mode == 3 then
+                local p = 5; local q = 3; 
+                local t = rotx * 0.1 + phase_offset * 0.8;
+                local R = current_offset * (1.0 + 0.3 * math.cos(q * t));
+                local r = current_offset * (0.4 + 0.2 * math.sin(q * t)); 
+
+                local x = R * math.cos(p * t);
+                local y = R * math.sin(p * t);
+                local z = r * math.sin(q * t) + index_scaled * 1.0; 
+
+                local rotation = CFrame.Angles(rotx*0.02, rotz*0.08, rotx*0.03); 
+                local rotated_pos = rotation:PointToWorldSpace(Vector3.new(x, y, z));
+                targetPosition = char_pos + rotated_pos;
+                
+            -- ** MODE 4 (KEY 4): Dynamic Tetrahedron (Aggressive Pulse) **
+            elseif mode == 4 then
+                local R = 20; 
+                local rotation = CFrame.Angles(rotx/3, rotz/2, rotx/3); 
+                local pulse_scale = (1 + math.sin(waveFactor * 1.5)) * 1.0 + 0.2; 
+                local positions = {
+                    Vector3.new(R, R, R), Vector3.new(-R, -R, R),
+                    Vector3.new(R, -R, -R), Vector3.new(-R, R, -R),
+                }
+                local offsetVec = positions[(i - 1) % #positions + 1] or Vector3.new(0,0,0);
+                targetPosition = char_pos + (rotation * (offsetVec * pulse_scale * 1.5));
+                
+            -- ** MODE 5 (KEY 5): Attractor Warp Field (Converge to orbiting point) **
+            elseif mode == 5 then
+                local t = rotx * 0.1 + index_scaled * 0.2;
+                local attractor_radius = current_offset * 2.0; 
+                local attractor_x = attractor_radius * math.sin(t * 5); 
+                local attractor_y = attractor_radius * 0.8 * math.cos(t * 3);
+                local attractor_z = attractor_radius * math.sin(t * 7);
+                
+                local convergence_factor = 0.2 + 0.8 * math.sin(waveFactor * 0.5); 
+                local offset_x = math.sin(index_scaled * 1.0) * 8; 
+                local offset_z = math.cos(index_scaled * 1.0) * 8;
+
+                targetPosition = char_pos + Vector3.new(
+                    attractor_x * convergence_factor + offset_x,
+                    attractor_y * convergence_factor,
+                    attractor_z * convergence_factor + offset_z
+                );
+                
+            -- ** MODE 6 (KEY 6): Epitrochoid Curve (Rolling Circle Outside) **
+            elseif mode == 6 then
+                local R_outer = current_offset * 1.5; 
+                local r_inner = current_offset * 0.5; 
+                local d_point = current_offset * 1.8; 
+                local t = rotx * 1.2 + phase_offset * 15; 
+
+                local x = (R_outer + r_inner) * math.cos(t) - d_point * math.cos(((R_outer + r_inner) / r_inner) * t);
+                local z = (R_outer + r_inner) * math.sin(t) - d_point * math.sin(((R_outer + r_inner) / r_inner) * t);
+                local y = math.sin(t * 4) * 10; 
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 7 (KEY 7): Rose Curve (k=5 Flower Pattern) **
+            elseif mode == 7 then
+                local k = 5; 
+                local r_max = current_offset * 2.0; 
+                local t = rotx * 0.5 + phase_offset * 5; 
+
+                local radius = r_max * math.cos(k * t);
+                local x = radius * math.cos(t);
+                local z = radius * math.sin(t);
+                local y = index_scaled * 0.5 + math.cos(waveFactor * 0.2) * 5; 
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 8 (KEY 8): Lissajous Knot (7, 5, 6 Frequencies) **
+            elseif mode == 8 then
+                local t = rotx * 0.1 + phase_offset * 0.8;
+                local freq_x = 7.0; local freq_y = 5.0; local freq_z = 6.0; 
+                local x = math.sin(t * freq_x + phase_offset * 5) * current_offset * 2.0; 
+                local y = math.sin(t * freq_y + phase_offset * 3) * current_offset * 1.2;
+                local z = math.sin(t * freq_z + phase_offset * 7) * current_offset * 1.8;
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 9 (KEY 9): Fibonacci Spiral (High Rotation/Spacing) **
+            elseif mode == 9 then
+                local golden_angle = 2.3999632297286;
+                local angle = golden_angle * i + rotx * 2; 
+                local radius_i = current_offset * math.sqrt(index_ratio) * 1.2; 
+                local x = math.cos(angle) * radius_i;
+                local z = math.sin(angle) * radius_i;
+                local y = index_scaled * 3.0; 
+                targetPosition = char_pos + Vector3.new(x, y, z);
+
+            -- ** MODE 10 (KEY 0): Hypersphere Projector (4D to 3D, Rotating) **
+            elseif mode == 10 then
+                local t = rotx * 0.1; 
+                local phi = phase_offset;
+                local R = current_offset * 1.8;
+                
+                local x = R * math.cos(t) * math.cos(phi);
+                local y = R * math.sin(t) * math.cos(phi);
+                local z = R * math.sin(phi) + R * math.sin(t * 10) * 0.4; 
+
+                local rotation = CFrame.Angles(t*0.8, t*0.5, 0); 
+                local rotated_pos = rotation:PointToWorldSpace(Vector3.new(x, y, z));
+                targetPosition = char_pos + rotated_pos;
+                
+            -- ** MODE 11 (F1): Double Helix Orbit (Intertwined Volumetric Spiral) **
+            elseif mode == 11 then
+                local radius = current_offset * 0.8;
+                local t_speed = rotx * 2.5; 
+                local helix_height = index_scaled * 6; 
+
+                local angle1 = t_speed + phase_offset * 10;
+                
+                local x = math.cos(angle1) * radius + math.sin(t_speed * 0.5) * 5; 
+                local z = math.sin(angle1) * radius;
+                local y = helix_height + math.cos(index_scaled * 0.2) * 5; 
+                
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 12 (F2): Volumetric Orbit (Wider, faster Ellipsoid) **
+            elseif mode == 12 then
+                local lat = (rotx + phase_offset) * 0.15;
+                local lon = (rotz + phase_offset) * 0.1;
+                local x_scale = current_offset * 2.0;
+                local y_scale = current_offset * 0.8;
+                local z_scale = current_offset * 1.5;
+                local x = x_scale * math.cos(lat) * math.cos(lon);
+                local y = y_scale * math.sin(lat) + math.sin(waveFactor * 0.5) * 5; 
+                local z = z_scale * math.cos(lat) * math.sin(lon);
+                
+                local rotation_cframe = CFrame.Angles(rotx*0.05, rotz*0.08, rotx*0.01); 
+                local rotated_pos = rotation_cframe:PointToWorldSpace(Vector3.new(x, y, z));
+                targetPosition = char_pos + rotated_pos;
+                
+            -- ** MODE 13 (F3): Vortex Turbine (Insanely fast rotation) **
+            elseif mode == 13 then
+                local radius_i = index_ratio * current_offset * 2.0; 
+                local angle = rotx * 25 + index_ratio * math.pi * 50; 
+                local x = math.cos(angle) * radius_i;
+                local z = math.sin(angle) * radius_i;
+                local y = index_scaled * 4;
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 14 (F4): Concentric Rings (Stacked) **
+            elseif mode == 14 then
+                local ring_spacing = 6;
+                local y = index_scaled * ring_spacing;
+                local ring_size = 10 + index_ratio * 15; -- Different radius for each ring
+                local angle = rotx * 2 + phase_offset * 5;
+                local x = math.cos(angle) * ring_size;
+                local z = math.sin(angle) * ring_size;
+                targetPosition = char_pos + Vector3.new(x, y, z);
+
+            -- ** MODE 15 (F5): Breathing Cone (Pulsing Y-axis) **
+            elseif mode == 15 then
+                local pulse = math.sin(waveFactor * 0.3) * 0.8 + 0.2; -- Stronger pulse
+                local radius_i = current_offset * index_ratio * 2.0 * pulse;
+                local y_i = index_scaled * 5;
+                local angle = rotx * 0.5 + phase_offset;
+                local x = math.cos(angle) * radius_i;
+                local z = math.sin(angle) * radius_i;
+                targetPosition = char_pos + Vector3.new(x, y_i, z);
+                
+            -- ** MODE 16 (F6): Ribbon Wave (3D Wave Motion, High Amplitude) **
+            elseif mode == 16 then
+                local ribbon_len = current_offset * 1.5;
+                local t = rotx * 0.2;
+                local x = math.cos(t + phase_offset) * ribbon_len;
+                local z = math.sin(t + phase_offset) * ribbon_len;
+                local y = math.sin(t * 3 + index_scaled * 1.0) * 20; -- Increased amplitude
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 17 (F7): Stacked Pulsing Rings (Index-dependent pulse) **
+            elseif mode == 17 then
+                local ring_spacing = 6;
+                local y = index_scaled * ring_spacing;
+                local pulse_factor = math.cos(waveFactor * 0.5 + index_ratio * math.pi * 4) * 8; -- Faster, phase shifted pulse
+                local ring_size = 10 + pulse_factor;
+                local angle = rotx * 3 + phase_offset;
+                local x = math.cos(angle) * ring_size;
+                local z = math.sin(angle) * ring_size;
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 18 (F8): Spherical Shell (Moire Effect) **
+            elseif mode == 18 then
+                local lat = (rotx + phase_offset * 2) * 0.2;
+                local lon = (rotz + phase_offset * 10) * 0.1; 
+                local radius = current_offset * (0.8 + 0.2 * math.sin(waveFactor * 0.8 + phase_offset));
+                local x = radius * math.cos(lat) * math.cos(lon);
+                local y = radius * math.sin(lat) + index_scaled * 0.5;
+                local z = radius * math.cos(lat) * math.sin(lon);
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 19 (F9): Hyperbolic Warp Pulse (Aggressive outward push) **
+            elseif mode == 19 then
+                local pulse_time = math.sin(waveFactor * 0.6 + index_ratio * math.pi * 2) * 0.5 + 0.5;
+                local dist = current_offset * math.pow(pulse_time, 10) * 4; -- Increased power for sharper pulse
+                local angle = rotx * 1.0 + phase_offset * 4;
+                local x = math.cos(angle) * dist;
+                local z = math.sin(angle) * dist;
+                local y = math.sin(waveFactor * 0.8) * 8;
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 20 (F10): Wavefront Emitter (Compressing/Expanding Disc) **
+            elseif mode == 20 then
+                local time_wave = math.sin(waveFactor * 1.0 - index_ratio * math.pi * 2) * 0.5 + 0.5;
+                local distance = current_offset * 1.5 * time_wave; 
+                local angle = rotx * 4 + phase_offset * 5;
+                local x = math.cos(angle) * distance;
+                local z = math.sin(angle) * distance;
+                local y = index_scaled * 0.5 + math.sin(waveFactor * 0.5) * 8;
+                targetPosition = char_pos + Vector3.new(x, y, z);
+                
+            -- ** MODE 21 (F11): NEW - Chaos Cube (Rotation with Randomized Jitter) **
+            elseif mode == 21 then
+                local R = 15;
+                local rotation = CFrame.Angles(rotx/4, rotz/5, rotx/6);
+                
+                -- Random Jitter component added to position
+                local jitter_x = math.sin(rotx * 10 + i) * 2 * math.random(5, 15) / 10;
+                local jitter_y = math.cos(rotz * 8 + i) * 2 * math.random(5, 15) / 10;
+                local jitter_z = math.sin(waveFactor * 12 + i) * 2 * math.random(5, 15) / 10;
+                
+                -- Standard cube corners (using 8 points)
+                local positions = {
+                    Vector3.new(R, R, R), Vector3.new(R, R, -R),
+                    Vector3.new(R, -R, R), Vector3.new(R, -R, -R),
+                    Vector3.new(-R, R, R), Vector3.new(-R, R, -R),
+                    Vector3.new(-R, -R, R), Vector3.new(-R, -R, -R),
+                }
+                
+                local offsetVec = positions[(i - 1) % #positions + 1] or Vector3.new(0,0,0);
+                
+                local rotated_pos = rotation:PointToWorldSpace(offsetVec * 1.5);
+                targetPosition = char_pos + rotated_pos + Vector3.new(jitter_x, jitter_y, jitter_z);
+                
+            -- ** MODE 22 (F12): NEW - Galactic Swarm (High-Frequency Radial/Spherical Wave) **
+            elseif mode == 22 then
+                local R_base = current_offset * 1.5;
+                local time_warp = rotx * 0.5 + phase_offset * 5;
+                
+                -- Radial distance modulated by time and index
+                local R_dynamic = R_base * (0.8 + 0.5 * math.sin(time_warp * 3 + index_ratio * math.pi * 10));
+                
+                -- Spherical coordinates with high frequencies
+                local lat = time_warp * 0.3 + index_ratio * math.pi * 20;
+                local lon = rotz * 0.2 + phase_offset * 10;
+                
+                local x = R_dynamic * math.cos(lat) * math.cos(lon);
+                local y = R_dynamic * math.sin(lat);
+                local z = R_dynamic * math.cos(lat) * math.sin(lon);
+                
+                local rotation = CFrame.Angles(rotx*0.01, rotx*0.01, rotz*0.01); 
+                local rotated_pos = rotation:PointToWorldSpace(Vector3.new(x, y, z));
+                targetPosition = char_pos + rotated_pos;
+                
+            end
+
+            -- Apply the position relative to the character's root part
+            v.Position = chr.HumanoidRootPart.CFrame:ToObjectSpace(CFrame.new(targetPosition)).Position;
+        end
+
+        -- Rotation (applies the spinning angular velocity)
+        for _, v in pairs(mov2) do
+            v.AngularVelocity = angular;
+        end
+    end)
+
+    -- Disconnect the RenderStepped connection when the character dies
+    chr.Humanoid.Died:Connect(function()
+        connection:Disconnect()
+    end)
+end
+
+-- 1. Run the initial, one-time setup first.
+initial_setup()
+
+-- 2. Connect the accessory control loop to character changes.
+plr.CharacterAdded:Connect(runAccessoryControl)
+if plr.Character then
+    runAccessoryControl()
+end
