@@ -1,0 +1,190 @@
+local ch = game:GetService("TextChatService").TextChannels.RBXGeneral
+
+ch:SendAsync("-gh  102605903375290,  81441033890520, 81441033890520, 81441033890520, 102605903375290, 102605903375290, 102605903375290")
+wait(2.1)
+
+ch:SendAsync("-gh 102605903375290, 81441033890520, 81441033890520, 102605903375290, 102605903375290, 102605903375290")
+wait(2.1)
+
+ch:SendAsync("-net")
+local plr=game.Players.LocalPlayer;local chr=plr.Character;local hum=chr.Humanoid;local mov={};local mov2={};function ftp(str)local pt={};if str~='me'and str~='random'then for i,v in pairs(game.Players:GetPlayers())do if v.Name:lower():find(str:lower())then table.insert(pt,v)end end elseif str=='me'then table.insert(pt,plr)elseif str=='random'then table.insert(pt,game.Players:GetPlayers()[math.random(1,#game.Players:GetPlayers())])end;return pt;end;for _,v in pairs(hum:GetAccessories())do local b=v.Handle;b.CustomPhysicalProperties=PhysicalProperties.new(0,0,0,0,0);b.CanCollide=false;b:BreakJoints();for _,k in pairs(v:GetChildren())do if not k:IsA'SpecialMesh'and not k:IsA'Part'then k:Destroy()end end;local still=Instance.new('BodyAngularVelocity',b);still.MaxTorque=Vector3.new(math.huge,math.huge,math.huge);still.AngularVelocity=Vector3.new(0,0,0);local align=Instance.new('AlignPosition',b);align.MaxForce=1000000;align.MaxVelocity=math.huge;align.RigidityEnabled=false;align.ApplyAtCenterOfMass=true;align.Responsiveness=200;local a0=Instance.new('Attachment',b);local a1=Instance.new('Attachment',chr.Head);align.Attachment0=a0;align.Attachment1=a1;table.insert(mov,a1);table.insert(mov2,still);end;local par={};for _,v in pairs(mov)do local parr=Instance.new('Part',workspace);parr.Anchored=true;parr.Size=Vector3.new(1,1,1);parr.Transparency=1;parr.CanCollide=false;table.insert(par,parr);end;if not game:GetService("ReplicatedStorage"):FindFirstChild("01_server")then return game:GetService("TeleportService"):Teleport(17574618959,plr)end;local rotx=0;local rotz=math.pi/2;local height=0;heighti=1;local offset=10;local speed=0.5;local mode=4;local angular=Vector3.new(0,0,0);local l=1;game['Run Service'].RenderStepped:Connect(function()rotx=rotx+speed/100;rotz=rotz+speed/100;l=(l>=360 and 1 or l+speed);for i,v in pairs(par)do v.CFrame=CFrame.new(chr.HumanoidRootPart.Position)*CFrame.fromEulerAnglesXYZ(0,math.rad(l+(360/#par)*i+speed),0)*CFrame.new(offset,0,0);end;if heighti==1 then height=height+speed/100 elseif heighti==2 then height=height-speed/100 end;if height>2 then heighti=2 end;if height<-1 then heighti=1 end;if mode==1 then for _,v in pairs(mov)do v.Position=Vector3.new(math.sin(rotx)*offset,0,math.sin(rotz)*offset)end elseif mode==2 then for _,v in pairs(mov)do v.Position=Vector3.new(offset,height,offset)end elseif mode==3 then for _,v in pairs(mov)do v.Position=Vector3.new(math.sin(rotx)*offset,height,math.sin(rotz)*offset)end elseif mode==4 then for i,v in pairs(mov)do v.Position=Vector3.new(chr.HumanoidRootPart.CFrame:ToObjectSpace(CFrame.new(par[i].Position)).X,chr.HumanoidRootPart.CFrame:ToObjectSpace(CFrame.new(par[i].Position)).Y,chr.HumanoidRootPart.CFrame:ToObjectSpace(CFrame.new(par[i].Position)).Z)end end;for _,v in pairs(mov2)do v.AngularVelocity=angular end end);plr.Chatted:Connect(function(c)local args=c:split(' ');if args[1]=='.orbit'then for _,v in pairs(mov)do chr=ftp(args[2])[1].Character;v.Parent=ftp(args[2])[1].Character.HumanoidRootPart end elseif args[1]=='.speed'then speed=tonumber(args[2])elseif args[1]=='.mode'then mode=tonumber(args[2])elseif args[1]=='.offset'then offset=tonumber(args[2])elseif args[1]=='.angular'then angular=Vector3.new(tonumber(args[2]),tonumber(args[3]),tonumber(args[4]))end end)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+
+local targetName = "sab_ac0byepaiss"
+
+local function randomName(length)
+	local chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789&@*#"
+	local str = ""
+	for i = 1, length do
+		str = str .. chars:sub(math.random(1,#chars),math.random(1,#chars))
+	end
+	return str
+end
+
+local function applyHighlightAndLabel(p)
+	if p.Character then
+		if not p.Character:FindFirstChild("H_"..targetName) then
+			local highlight = Instance.new("Highlight")
+			highlight.Name = "H_"..randomName(20)
+			highlight.Adornee = p.Character
+			highlight.FillColor = Color3.fromRGB(255, 255, 100)
+			highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+			highlight.Parent = LP.PlayerGui
+		end
+
+		if not p.Character:FindFirstChild("B_"..targetName) then
+			local billboard = Instance.new("BillboardGui")
+			billboard.Name = "B_"..randomName(20)
+			billboard.Adornee = p.Character:FindFirstChild("Head")
+			billboard.Size = UDim2.new(0,200,0,50)
+			billboard.StudsOffset = Vector3.new(0,3,0)
+			billboard.AlwaysOnTop = true
+			billboard.Parent = LP.PlayerGui
+
+			local textLabel = Instance.new("TextLabel")
+			textLabel.Size = UDim2.fromScale(1,1)
+			textLabel.BackgroundTransparency = 1
+			textLabel.Text = "OWNER OF THE SIGMA SCRIPT"
+			textLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+			textLabel.TextScaled = true
+			textLabel.Font = Enum.Font.SourceSansBold
+			textLabel.Parent = billboard
+		end
+	end
+end
+
+local target = Players:FindFirstChild(targetName)
+if target then
+	applyHighlightAndLabel(target)
+end
+
+Players.PlayerAdded:Connect(function(p)
+	if p.Name == targetName then
+		applyHighlightAndLabel(p)
+	end
+end)
+
+if target then
+	target.CharacterAdded:Connect(function()
+		applyHighlightAndLabel(target)
+	end)
+end
