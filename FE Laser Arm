@@ -1,0 +1,7 @@
+game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("-gh 63690008 62234425 48474313 62724852 451220849 451220849")
+		wait(2.1)
+		game:GetService("TextChatService").TextChannels.RBXGeneral:SendAsync("-net")
+	
+		
+	
+		loadstring(game:HttpGet('https://github.com/Minh1234ngudot/-/raw/refs/heads/main/Access/Laser%20Arm.luau'))()
