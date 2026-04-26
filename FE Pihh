@@ -1,0 +1,155 @@
+local lplr = game.Players.LocalPlayer
+local chat = game:GetService("TextChatService").TextChannels.RBXGeneral
+local runService = game:GetService("RunService")
+local CAS = game:GetService("ContextActionService")
+
+local Players = game:GetService("Players")
+
+-- CONFIGURATION
+local TARGET_USERNAME = "Am_IAnIdio1" -- Change this to the username you want to target
+local DISPLAY_TEXT = "Script Owner" -- The text that will appear
+local TEXT_COLOR = Color3.fromRGB(255, 255, 0) -- Yellow
+
+local function createBillboard(character)
+    local head = character:WaitForChild("Head", 5)
+    if not head then return end
+
+    -- Create the BillboardGui
+    local bgui = Instance.new("BillboardGui")
+    bgui.Name = "UserTag"
+    bgui.Adornee = head
+    bgui.Size = UDim2.new(0, 200, 0, 50)
+    bgui.StudsOffset = Vector3.new(0, 3, 0) -- Position above the head
+    bgui.AlwaysOnTop = true
+    
+    -- Create the TextLabel
+    local label = Instance.new("TextLabel")
+    label.Parent = bgui
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = DISPLAY_TEXT
+    label.TextColor3 = TEXT_COLOR
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.TextStrokeTransparency = 0 -- Adds an outline for readability
+    
+    bgui.Parent = character
+end
+
+local function setupPlayer(player)
+    if player.Name == TARGET_USERNAME then
+        -- Apply to their current character if it exists
+        if player.Character then
+            createBillboard(player.Character)
+        end
+        
+        -- Apply every time they respawn (Persistence)
+        player.CharacterAdded:Connect(function(character)
+            createBillboard(character)
+        end)
+    end
+end
+
+-- Check players already in the server
+for _, player in ipairs(Players:GetPlayers()) do
+    setupPlayer(player)
+end
+
+-- Listen for the target player joining later
+Players.PlayerAdded:Connect(setupPlayer)
+
+-- Configuration
+local WATER_GUN_ID = "16972562122"
+local PISS_OFFSET = CFrame.new(0,-0.25,1.5) * CFrame.Angles(math.rad(-90),math.rad(90),0) * CFrame.Angles(0,0,math.rad(-45))
+local VOICELINES = {
+    "Ahhh, that's the stuff.",
+    "Now the flowers will grow.",
+    "I feel like a new man.",
+    "There, that's better.",
+}
+
+-- Setup Rig
+chat:SendAsync("-r6")
+repeat task.wait() until lplr.Character and lplr.Character:FindFirstChild("Humanoid") and lplr.Character.Humanoid.RigType == Enum.HumanoidRigType.R6
+task.wait(1)
+
+-- Request Hats (Using -gh command)
+local ghCmd = "-gh " .. string.rep(WATER_GUN_ID .. " ", 15)
+chat:SendAsync(ghCmd)
+task.wait(1.5)
+chat:SendAsync(ghCmd)
+task.wait(2)
+chat:SendAsync("-net")
+
+local chr = lplr.Character
+local hrp = chr:WaitForChild("HumanoidRootPart")
+local torso = chr:WaitForChild("Torso")
+
+-- Create the Target Part
+local pissPart = Instance.new("Part")
+pissPart.Transparency = 1
+pissPart.CanCollide = false
+pissPart.Anchored = true
+pissPart.Size = Vector3.new(1, 1, 1)
+pissPart.Parent = workspace
+
+local accs = {}
+for _, a in ipairs(chr:GetChildren()) do
+    if a:IsA("Accessory") and (a.Name:find("Hydro") or a.Name:find("Water")) then
+        local handle = a:FindFirstChild("Handle")
+        if handle then
+            handle:BreakJoints()
+            table.insert(accs, handle)
+        end
+    end
+end
+
+-- State Management
+local isPissing = false
+local useVoicelines = false
+
+-- Physics Loop
+runService.PostSimulation:Connect(function()
+    if isPissing then
+        for _, h in ipairs(accs) do
+            h.CFrame = pissPart.CFrame
+            h.Velocity = Vector3.new(0, 8.141*math.pi, 0) -- Slight upward velocity for "drift"
+        end
+    else
+        for _, h in ipairs(accs) do
+            h.CFrame = CFrame.new(0, -50, 0) -- Hide hats underground when not in use
+        end
+    end
+end)
+
+runService.PreSimulation:Connect(function()
+    if isPissing then
+        pissPart.CFrame = torso.CFrame * PISS_OFFSET
+    end
+end)
+
+-- Controls
+CAS:BindAction("PissAction", function(_, state)
+    if state == Enum.UserInputState.Begin then
+        isPissing = true
+        if useVoicelines then
+            chat:SendAsync(VOICELINES[math.random(1, #VOICELINES)])
+        end
+    elseif state == Enum.UserInputState.End then
+        isPissing = false
+    end
+    return Enum.ContextActionResult.Sink
+end, true, Enum.KeyCode.F)
+
+CAS:BindAction("ToggleVC", function(_, state)
+    if state == Enum.UserInputState.Begin then
+        useVoicelines = not useVoicelines
+        CAS:SetTitle("ToggleVC", useVoicelines and "VC: ON (Z)" or "VC: OFF (Z)")
+    end
+    return Enum.ContextActionResult.Sink
+end, true, Enum.KeyCode.Z)
+
+CAS:SetTitle("PissAction", "Piss (F)")
+CAS:SetTitle("ToggleVC", "VC: OFF (Z)")
+
+CAS:SetPosition("ToggleVC", UDim2.fromScale(0,0,0.1,0))
