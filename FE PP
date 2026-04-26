@@ -1,0 +1,91 @@
+-- Envia "-net" no chat (TextChatService)
+local TextChatService = game:GetService("TextChatService")
+
+TextChatService.TextChannels.RBXGeneral:SendAsync("-gh 13760253770 13760253770 13760253770 13760253770 13760253770 13760253770 13760253770 13760253770")
+
+task.wait(3)
+
+TextChatService.TextChannels.RBXGeneral:SendAsync("-net")
+
+task.wait(0.4)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local plr = Players.LocalPlayer
+local char = plr.Character or plr.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local DISTANCIA_FRENTE = 0.9  -- distÃ¢ncia Ã  frente do HRP
+local ESPACAMENTO = 0.8        -- acessÃ³rios mais prÃ³ximos
+local JELLY_RESP = 100
+local JELLY_MAXFORCE = 1000
+
+-- Pega todos os acessÃ³rios com Handle
+local accessories = {}
+for _,v in ipairs(char:GetChildren()) do
+	if v:IsA("Accessory") and v:FindFirstChild("Handle") then
+		table.insert(accessories, v)
+	end
+end
+
+-- Tabela para armazenar dados
+local accessoryData = {}
+
+for i,acc in ipairs(accessories) do
+	local handle = acc.Handle
+	handle:BreakJoints()
+	handle.CanCollide = false
+	handle.Massless = false
+
+	-- Destroi meshes
+	for _,mesh in ipairs(handle:GetChildren()) do
+		if mesh:IsA("Mesh") or mesh:IsA("SpecialMesh") then
+			mesh:Destroy()
+		end
+	end
+
+	-- Remove attachments antigos
+	for _,att in ipairs(handle:GetChildren()) do
+		if att:IsA("Attachment") then
+			att:Destroy()
+		end
+	end
+
+	-- Attachment do handle
+	local att0 = Instance.new("Attachment")
+	att0.Parent = handle
+
+	-- Attachment1 dentro do HRP (estÃ¡vel)
+	local att1 = Instance.new("Attachment")
+	att1.Parent = hrp
+	att1.Position = Vector3.new(0, 0, -(DISTANCIA_FRENTE + (i-1) * ESPACAMENTO)) -- posiÃ§Ã£o inicial, Y nÃ£o importa
+
+	-- AlignPosition
+	local ap = Instance.new("AlignPosition")
+	ap.Attachment0 = att0
+	ap.Attachment1 = att1
+	ap.RigidityEnabled = false
+	ap.Responsiveness = JELLY_RESP
+	ap.MaxForce = JELLY_MAXFORCE
+	ap.Parent = handle
+
+	-- AlignOrientation
+	local ao = Instance.new("AlignOrientation")
+	ao.Attachment0 = att0
+	ao.Attachment1 = att1
+	ao.RigidityEnabled = false
+	ao.Responsiveness = JELLY_RESP
+	ao.MaxTorque = JELLY_MAXFORCE
+	ao.Parent = handle
+
+	table.insert(accessoryData, {att1 = att1, index = i})
+end
+
+-- Atualiza posiÃ§Ã£o relativa Ã  frente do HRP, Y = -0.8
+RunService.RenderStepped:Connect(function()
+	for _,data in ipairs(accessoryData) do
+		local offset = Vector3.new(0, -0.8, -(DISTANCIA_FRENTE + (data.index-1) * ESPACAMENTO)) -- abaixado para -0.8
+		data.att1.Position = offset
+	end
+end)
